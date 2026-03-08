@@ -9,7 +9,21 @@ const habitSchema = new mongoose.Schema(
     },
     name: { type: String, required: true },
     description: String,
-    frequency: { type: String, enum: ["daily", "weekly"], default: "daily" },
+    frequency: {
+      type: String,
+      enum: ["daily", "weekly", "yearly", "custom"],
+      default: "daily",
+    },
+    customDays: {
+      type: Number,
+      min: 1,
+      default: null,
+    },
+    category: {
+      type: String,
+      enum: ["Well Being", "Health", "Productivity", "Learning"],
+      default: "Well Being",
+    },
     completedDates: [{ type: Date }],
   },
   { timestamps: true },
