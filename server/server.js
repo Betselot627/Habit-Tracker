@@ -11,20 +11,10 @@ const app = express();
 connectDB();
 
 // Middleware
-const allowedOrigins = [
-  "http://localhost:5173",
-  process.env.CLIENT_URL, // set this in Render env vars to your Vercel URL
-].filter(Boolean);
-
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // allow requests with no origin (mobile apps, curl, etc.)
-      if (!origin || allowedOrigins.includes(origin))
-        return callback(null, true);
-      callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
+    origin: "*",
+    credentials: false,
   }),
 );
 app.use(express.json());
