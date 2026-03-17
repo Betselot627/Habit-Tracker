@@ -16,7 +16,8 @@ const calculateProgress = (habit) => {
       totalDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
       break;
     case "weekly":
-      totalDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24 * 7)) + 1;
+      totalDays =
+        Math.ceil((today - startDate) / (1000 * 60 * 60 * 24 * 7)) + 1;
       break;
     case "yearly":
       totalDays = 1; // only once per year
@@ -45,7 +46,7 @@ const calculateProgress = (habit) => {
   // For yearly, only one completion counts
   if (habit.frequency === "yearly") {
     completedCount = habit.completedDates.some(
-      (d) => new Date(d).getFullYear() === new Date().getFullYear()
+      (d) => new Date(d).getFullYear() === new Date().getFullYear(),
     )
       ? 1
       : 0;
@@ -91,10 +92,13 @@ exports.getHabits = async (req, res) => {
 // Create habit
 exports.createHabit = async (req, res) => {
   try {
-    const { name, description, frequency, category, customDays } = req.body;
+    const { name, description, timeGoal, frequency, category, customDays } =
+      req.body;
 
     if (!name || !frequency) {
-      return res.status(400).json({ message: "Name and frequency are required." });
+      return res
+        .status(400)
+        .json({ message: "Name and frequency are required." });
     }
 
     if (frequency === "custom" && (!customDays || customDays <= 0)) {
@@ -106,6 +110,7 @@ exports.createHabit = async (req, res) => {
     const habit = await Habit.create({
       name,
       description,
+      timeGoal,
       frequency,
       customDays: frequency === "custom" ? customDays : null,
       category,
@@ -122,7 +127,8 @@ exports.createHabit = async (req, res) => {
 // Update habit
 exports.updateHabit = async (req, res) => {
   try {
-    const { name, description, frequency, category, customDays } = req.body;
+    const { name, description, timeGoal, frequency, category, customDays } =
+      req.body;
 
     if (frequency === "custom" && (!customDays || customDays <= 0)) {
       return res
@@ -135,11 +141,12 @@ exports.updateHabit = async (req, res) => {
       {
         name,
         description,
+        timeGoal,
         frequency,
         category,
         customDays: frequency === "custom" ? customDays : null,
       },
-      { new: true }
+      { new: true },
     );
 
     if (!habit) return res.status(404).json({ message: "Habit not found" });
@@ -176,7 +183,7 @@ exports.toggleComplete = async (req, res) => {
 
     const today = new Date().setHours(0, 0, 0, 0);
     const index = habit.completedDates.findIndex(
-      (d) => new Date(d).setHours(0, 0, 0, 0) === today
+      (d) => new Date(d).setHours(0, 0, 0, 0) === today,
     );
 
     if (index > -1) {

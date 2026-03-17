@@ -4,172 +4,153 @@ import api from "../api/axios";
 import HabitCard from "./HabitCard";
 import NewHabitModal from "./NewHabitModal";
 import Button from "./Button";
-import { getCategoryColor } from "../styles/colors";
 
-const MainContent = ({ selectedDate }) => {
+const TodayProgress = ({ completed, total }) => {
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  return (
+    <div className="bg-white dark:bg-[#1f2937] rounded-xl p-5 border border-gray-200 dark:border-gray-700 mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-gray-600 dark:text-gray-300 font-medium">
+          Today's Progress
+        </span>
+        <span className="text-gray-900 dark:text-white font-bold">
+          {completed} / {total} completed
+        </span>
+      </div>
+      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+        <div
+          className="bg-emerald-500 h-2.5 rounded-full transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {completed === total && total > 0 && (
+        <p className="mt-3 text-green-600 dark:text-green-400 text-sm font-medium text-center">
+          🎉 All habits completed for today!
+        </p>
+      )}
+    </div>
+  );
+};
+
+const MainContent = ({ selectedDate = new Date(), onHabitsChange }) => {
   const [habits, setHabits] = useState([]);
-  const [filteredHabits, setFilteredHabits] = useState([]);
-  const [activeFilter, setActiveFilter] = useState("All");
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  const filters = [
-    { name: "All", color: "red", icon: "🌟" },
-    { name: "Well Being", icon: "💖" },
-    { name: "Health", icon: "💪" },
-    { name: "Productivity", icon: "⚡" },
-    { name: "Learning", icon: "📚" },
-  ];
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchHabits();
   }, []);
 
-  useEffect(() => {
-    applyFilter();
-  }, [habits, activeFilter]);
-
   const fetchHabits = async () => {
     try {
       const { data } = await api.get("/habits");
       setHabits(data);
+      onHabitsChange?.(data);
     } catch (err) {
-      console.error("Failed to fetch habits", err);
+      setError("Failed to load habits. Please refresh.");
     } finally {
       setLoading(false);
     }
   };
 
-  const applyFilter = () => {
-    if (activeFilter === "All") {
-      setFilteredHabits(habits);
-    } else {
-      setFilteredHabits(habits.filter((h) => h.category === activeFilter));
-    }
+  const updateHabits = (updated) => {
+    setHabits(updated);
+    onHabitsChange?.(updated);
+  };
+
+  const isCompletedToday = (habit) => {
+    const today = new Date(selectedDate).setHours(0, 0, 0, 0);
+    return habit.completedDates.some(
+      (d) => new Date(d).setHours(0, 0, 0, 0) === today,
+    );
   };
 
   const handleToggle = async (id) => {
     try {
       const { data } = await api.post(`/habits/${id}/toggle`);
-      setHabits(habits.map((h) => (h._id === id ? data : h)));
+      updateHabits(habits.map((h) => (h._id === id ? data : h)));
     } catch (err) {
-      console.error("Failed to toggle habit", err);
+      console.error("Failed to toggle", err);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this habit?")) return;
+    if (!window.confirm("Delete this habit?")) return;
     try {
       await api.delete(`/habits/${id}`);
-      setHabits(habits.filter((h) => h._id !== id));
+      updateHabits(habits.filter((h) => h._id !== id));
     } catch (err) {
-      console.error("Failed to delete habit", err);
+      console.error("Failed to delete", err);
     }
+  };
+
+  const handleEditHabit = async (id, updates) => {
+    const { data } = await api.put(`/habits/${id}`, updates);
+    updateHabits(habits.map((h) => (h._id === id ? data : h)));
   };
 
   const handleAddHabit = async (habitData) => {
-    try {
-      console.log("Creating habit with data:", habitData);
-      const { data } = await api.post("/habits", habitData);
-      console.log("Habit created successfully:", data);
-      setHabits([...habits, data]);
-      setShowModal(false);
-    } catch (err) {
-      console.error("Failed to add habit:", err);
-      console.error("Error response:", err.response?.data);
-      alert(
-        `Failed to create habit: ${err.response?.data?.message || err.message}`,
-      );
-    }
+    const { data } = await api.post("/habits", habitData);
+    updateHabits([...habits, data]);
+    setShowModal(false);
   };
 
-  const isCompletedToday = (habit) => {
-    const today = selectedDate.setHours(0, 0, 0, 0);
-    return habit.completedDates.some(
-      (date) => new Date(date).setHours(0, 0, 0, 0) === today,
-    );
-  };
+  const activeHabits = habits.filter((h) => !isCompletedToday(h));
+  const completedHabits = habits.filter((h) => isCompletedToday(h));
 
-  const activeHabits = filteredHabits.filter((h) => !isCompletedToday(h));
-  const completedHabits = filteredHabits.filter((h) => isCompletedToday(h));
-
-  const getFilterButtonClass = (filterName) => {
-    const isActive = activeFilter === filterName;
-
-    if (filterName === "All") {
-      return isActive
-        ? "bg-slate-700 hover:bg-slate-800 text-white shadow-md"
-        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700";
-    }
-
-    const categoryColor = getCategoryColor(filterName);
-    return isActive
-      ? `${categoryColor.button} shadow-md`
-      : `bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700`;
-  };
+  const dateLabel = new Date(selectedDate).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen lg:ml-64 lg:mr-80 transition-colors duration-300">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      <div className="flex items-center justify-center h-screen lg:ml-64 lg:mr-72 bg-gray-50 dark:bg-[#111827]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600" />
       </div>
     );
   }
 
   return (
-    <div className="lg:ml-64 lg:mr-80 min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-8 pb-20 lg:pb-8 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 md:mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {selectedDate.toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
+    <div className="lg:ml-64 lg:mr-72 min-h-screen bg-gray-50 dark:bg-[#111827] p-4 md:p-8 pb-24 lg:pb-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1">
+            {dateLabel}
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Track your daily habits and build consistency
+          <p className="text-gray-500 dark:text-gray-400">
+            Focus on today's habits
           </p>
         </div>
 
-        {/* Filters */}
-        <div className="mb-6">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {filters.map((filter) => (
-              <button
-                key={filter.name}
-                onClick={() => setActiveFilter(filter.name)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${getFilterButtonClass(
-                  filter.name,
-                )}`}
-              >
-                <span className="text-base">{filter.icon}</span>
-                <span className="text-sm">{filter.name}</span>
-              </button>
-            ))}
+        {error && (
+          <div className="mb-4 px-4 py-3 bg-red-50 dark:bg-red-900/40 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
+            {error}
           </div>
-        </div>
+        )}
 
-        {/* New Habit Button */}
+        <TodayProgress
+          completed={completedHabits.length}
+          total={habits.length}
+        />
+
         <div className="mb-6">
           <Button
             variant="primary"
-            size="md"
             icon={<Plus className="w-5 h-5" />}
             onClick={() => setShowModal(true)}
-            fullWidth={false}
           >
-            New Habit
+            Add Habit
           </Button>
         </div>
 
-        {/* Active Habits */}
         {activeHabits.length > 0 && (
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></span>
-              Active Habits ({activeHabits.length})
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              Active ({activeHabits.length})
             </h3>
             <div className="space-y-3">
               {activeHabits.map((habit) => (
@@ -178,17 +159,17 @@ const MainContent = ({ selectedDate }) => {
                   habit={habit}
                   onToggle={handleToggle}
                   onDelete={handleDelete}
+                  onEdit={handleEditHabit}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {/* Completed Habits */}
         {completedHabits.length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full" />
               Completed ({completedHabits.length})
             </h3>
             <div className="space-y-3">
@@ -198,21 +179,21 @@ const MainContent = ({ selectedDate }) => {
                   habit={habit}
                   onToggle={handleToggle}
                   onDelete={handleDelete}
+                  onEdit={handleEditHabit}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {filteredHabits.length === 0 && (
-          <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+        {habits.length === 0 && (
+          <div className="text-center py-16 bg-white dark:bg-[#1f2937] rounded-2xl border border-gray-200 dark:border-gray-700">
             <div className="text-6xl mb-4">🎯</div>
             <p className="text-gray-500 dark:text-gray-400 text-lg mb-4">
-              No habits found. Create your first habit to get started!
+              No habits yet. Create your first one!
             </p>
             <Button
               variant="primary"
-              size="md"
               icon={<Plus className="w-5 h-5" />}
               onClick={() => setShowModal(true)}
             >
