@@ -4,6 +4,7 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const habitRoutes = require("./routes/habitRoutes");
+const profileRoutes = require("./routes/profileRoutes");
 
 const app = express();
 
@@ -17,11 +18,12 @@ app.use(
     credentials: false,
   }),
 );
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/habits", habitRoutes);
+app.use("/api/profile", profileRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {

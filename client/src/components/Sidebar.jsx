@@ -7,6 +7,7 @@ import {
   User,
   Sun,
   Moon,
+  UserCircle,
 } from "lucide-react";
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
@@ -32,6 +33,11 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
       id: "yearly",
       label: "Yearly Progress",
       icon: <Calendar className="w-5 h-5" />,
+    },
+    {
+      id: "profile",
+      label: "Profile",
+      icon: <UserCircle className="w-5 h-5" />,
     },
   ];
 
@@ -86,9 +92,19 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
 
           <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-emerald-600 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
+              {user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-9 h-9 rounded-full object-cover border-2 border-emerald-500"
+                />
+              ) : (
+                <div className="w-9 h-9 bg-emerald-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">
+                    {user?.name?.[0]?.toUpperCase()}
+                  </span>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500">Logged in as</p>
                 <p className="text-sm text-gray-900 dark:text-white font-medium truncate">

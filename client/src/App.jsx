@@ -8,6 +8,7 @@ import RightSidebar from "./components/RightSidebar";
 import DailyProgressPage from "./pages/DailyProgressPage";
 import WeeklyProgressPage from "./pages/WeeklyProgressPage";
 import YearlyProgressPage from "./pages/YearlyProgressPage";
+import ProfilePage from "./pages/ProfilePage";
 import api from "./api/axios";
 
 function App() {
@@ -60,6 +61,8 @@ function App() {
         return <WeeklyProgressPage />;
       case "yearly":
         return <YearlyProgressPage />;
+      case "profile":
+        return <ProfilePage />;
       default:
         return (
           <MainContent selectedDate={selectedDate} onHabitsChange={setHabits} />

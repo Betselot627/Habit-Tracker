@@ -18,7 +18,7 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       token,
-      user: { id: user._id, email, name },
+      user: { id: user._id, email, name, avatar: user.avatar || "" },
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -40,7 +40,12 @@ exports.login = async (req, res) => {
 
     res.json({
       token,
-      user: { id: user._id, email: user.email, name: user.name },
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar || "",
+      },
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
